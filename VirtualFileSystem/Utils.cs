@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Linq;
 
 namespace VirtualFileSystem
 {
@@ -19,7 +20,25 @@ namespace VirtualFileSystem
             // return "$\1\2\3" if node 3 is a folder
             // return "$\1\2" if node 3 is a file
 
-            return "";
+            int i = 0;
+            List<string> unionList = new List<string>();
+            List<string> curNodeParents = new List<string>();
+
+            foreach ( var node in nodes)
+            {
+                if (i == 0)
+                {
+                    unionList = new List<string>(node.Path.Split(VirtualFolder.FOLDER_SEPARATOR));
+                }
+                else
+                {
+                    curNodeParents = new List<string>(node.Path.Split(VirtualFolder.FOLDER_SEPARATOR));
+                    unionList = unionList.Intersect(curNodeParents).ToList();
+                }
+                i++;
+            }
+            string ret = string.Join(VirtualFolder.FOLDER_SEPARATOR, unionList);
+            return ret;
         }
     }
 }

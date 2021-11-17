@@ -8,6 +8,34 @@ namespace UnitTestProject
     [TestClass]
     public class UtilUnitTest
     {
+        //Use ClassInitialize to run code before running the first test in the class 
+        [ClassInitialize()]
+        public static void ClassSetUp(TestContext testContext)
+        {
+        }
+
+        // 
+        //Use TestInitialize to run code before running each test 
+        [TestInitialize()]
+        public void TestSetup()
+        {
+        }
+
+        // 
+        //Use TestCleanup to run code after each test has run 
+        [TestCleanup()]
+        public void TestTeardown()
+        {
+            VirtualStorage.Instance.Init();
+        }
+
+        // 
+        //Use ClassCleanup to run code after all tests in a class have run 
+        [ClassCleanup()]
+        public static void ClassTeardown()
+        {
+        }
+
         [TestMethod]
         public void TestMethod_GetPublicParentFolderPath()
         {
@@ -34,9 +62,11 @@ namespace UnitTestProject
             Assert.IsTrue(result == @"$\1\2\3");
 
             var folder6 = rootFolder.CreateFolder(@"1\2\33");
-            var file = folder3.CreatFile("3");
+            //var file = folder3.CreatFile("3"); //Fix
+            var file = rootFolder.CreateFolder(@"1\2").CreatFile("3");
             var file2 = folder6.CreatFile("33");
             folders = new IVirtualNode[] { folder1, folder2, folder3, folder4, folder5, file, file2 };
+            result = Utils.GetPublicParentFolderPath(folders);
             Assert.IsTrue(result == @"$\1\2");
         }
     }

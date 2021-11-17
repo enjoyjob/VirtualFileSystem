@@ -53,5 +53,11 @@ namespace VirtualFileSystem
         {
             get { return items; }
         }
+
+        //remove all items
+        public void Init()
+        {
+            items.Clear();
+        }
     }
 }

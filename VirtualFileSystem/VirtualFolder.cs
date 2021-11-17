@@ -46,14 +46,7 @@ namespace VirtualFileSystem
             string base_name = string.IsNullOrWhiteSpace(fileName) ?
                 DEFAULT_FOLDER_NAME : fileName.Trim();
 
-            List<string> names = new List<string>();
-            var items = GetDirectChild();
-            foreach (var item in items)
-            {
-                names.Add(item.Name);
-            }
-
-            fileName = GetUniqName(base_name, names);
+            fileName = GetUniqName(this.Path, base_name);
             var newFile = new VirtualFile(fileName);
 
             // add your code here
@@ -72,14 +65,7 @@ namespace VirtualFileSystem
             string base_name = string.IsNullOrEmpty(folderName) ? 
                 DEFAULT_FOLDER_NAME : folderName.Trim();
 
-            List<string> names = new List<string>();
-            var items = GetDirectChild();
-            foreach (var item in items)
-            {
-                names.Add(item.Name);
-            }
-
-            folderName = GetUniqName(base_name, names);
+            folderName = GetUniqName(this.Path, base_name);
             var subFolder = new VirtualFolder(folderName);
 
             // add your code here
@@ -115,6 +101,16 @@ namespace VirtualFileSystem
         public IVirtualNode Copy(IVirtualNode source)
         {
             // add your code here
+            if (IsFile(source))
+            {
+                return CreatFile(source.Name);
+            }
+
+            if (IsFolder(source))
+            {
+                //todo
+                return null;
+            }
             return null;
         }
 
@@ -122,6 +118,19 @@ namespace VirtualFileSystem
         public IVirtualNode Cut(IVirtualNode source)
         {
             // add your code here
+            if (IsFile(source))
+            {
+                source.Name = GetUniqName(this.Path, source.Name);
+                ((VirtualFile)source).Path = this.Path;
+
+                return source;
+            }
+
+            if (IsFolder(source))
+            {
+                //todo
+                return null;
+            }
             return null;
         }
 
@@ -151,7 +160,7 @@ namespace VirtualFileSystem
         public IVirtualNode Get(string name)
         {
             // add your code here
-            var items = GetDirectChild();
+            var items = GetDirectChild(this.Path);
             foreach (var item in items)
             {
                 if (name == item.Name)
@@ -164,10 +173,10 @@ namespace VirtualFileSystem
         public VirtualFolder GetFolder(string name)
         {
             // add your code here
-            var items = GetDirectChild();
+            var items = GetDirectChild(this.Path, true);
             foreach (var item in items)
             {
-                if ((name == item.Name) && (item.GetType() == typeof(VirtualFolder)))
+                if ((name == item.Name) && IsFolder(item))
                 {
                     return (VirtualFolder) item;
                 }
@@ -175,7 +184,17 @@ namespace VirtualFileSystem
             return null;
         }
 
-        private IEnumerable<IVirtualNode> GetDirectChild()
+        private bool IsFolder(IVirtualNode node)
+        {
+            return (node.GetType() == typeof(VirtualFolder) 
+                || node.GetType() == typeof(VirtualRootFolder));
+        }
+
+        private bool IsFile(IVirtualNode node)
+        {
+            return node.GetType() == typeof(VirtualFile);
+        }
+        private IEnumerable<IVirtualNode> GetDirectChild(string fullPath, bool folderOnly = false)
         {
             List<IVirtualNode> ret = new List<IVirtualNode>();
             foreach (var item in VirtualStorage.Instance.Items)
@@ -183,19 +202,37 @@ namespace VirtualFileSystem
                 //this path: $1
                 //direct child path: $1\ab , $1\cd , $1\ef ,...
                 //child child  path: $1\ab\x1 , $1\ab\x1\x2 , $1\ab\x1\x2\x3 ,...
-                
-                if (item.Path.StartsWith(Path) && Path.Length == item.Path.LastIndexOf(FOLDER_SEPARATOR))
+                if (IsFolder(item))
                 {
-                    ret.Add(item);
+                    if (item.Path.StartsWith(fullPath) && fullPath.Length == item.Path.LastIndexOf(FOLDER_SEPARATOR))
+                    {
+                        ret.Add(item);
+                    }
                 }
+                if (!folderOnly && IsFile(item))
+                {
+                    if (item.Path == fullPath)
+                    {
+                        ret.Add(item);
+                    }
+                }
+
             }
             return ret;
         }
 
-        private string GetUniqName(string base_name, List<string> names)
+        private string GetUniqName(string fullPath, string base_name)
         {
             string ret = base_name;
-            if(names != null && names.Count > 0)
+
+            List<string> names = new List<string>();
+            var items = GetDirectChild(fullPath);
+            foreach (var item in items)
+            {
+                names.Add(item.Name);
+            }
+
+            if (names != null && names.Count > 0)
             {
                 int i = 0;
                 while (names.Contains(ret))
