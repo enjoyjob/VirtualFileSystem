@@ -130,6 +130,10 @@ namespace UnitTestProject
         {
             VirtualRootFolder rootFolder = new VirtualRootFolder();
             var folder1 = rootFolder.CreateFolder("folder1");
+            //qlm:start
+            var folder1_folder_a = folder1.CreateFolder("a");
+            var folder1_file_a = folder1.CreatFile("a");
+            //qlm:end
             folder1.Delete();
 
             // file should be cleaned up
@@ -178,14 +182,37 @@ namespace UnitTestProject
             Random r = new Random();
             var subFolder = folder1.CreateFolder(r.Next(1, 10).ToString()).CreateFolder(r.Next(1, 10).ToString()).CreateFolder(r.Next(1, 10).ToString());
             // Cut parent is not allowed
-            Assert.IsFalse(subFolder.Cut(folder1) == null);
+            //Assert.IsFalse(subFolder.Cut(folder1) == null); //Fix
+            Assert.IsTrue(subFolder.Cut(folder1) == null);
 
             var subFolder2 = subFolder.CreateFolder(r.Next(1, 10).ToString()).CreateFolder(r.Next(1, 10).ToString()).CreateFolder(r.Next(1, 10).ToString());
             // Cut parent is not allowed
-            Assert.IsFalse(subFolder2.Cut(subFolder) == null);
+            //Assert.IsFalse(subFolder2.Cut(subFolder) == null); //Fix
+            Assert.IsTrue(subFolder2.Cut(subFolder) == null);
 
             // Cut myself is not allowed as well
-            Assert.IsFalse(subFolder2.Cut(subFolder2) == null);
+            //Assert.IsFalse(subFolder2.Cut(subFolder2) == null); //Fix
+            Assert.IsTrue(subFolder2.Cut(subFolder2) == null);
+            
+            //Add Case
+            var folderA = rootFolder.CreateFolder("A");
+            var folderA1 = folderA.CreateFolder("1"); //A\1
+            
+            var folderB = rootFolder.CreateFolder("B");
+            var folderB1 = folderB.CreateFolder("1"); //B\1
+            var folderB2 = folderB.CreateFolder("2"); //B\2
+
+            var folderC = rootFolder.CreateFolder("C");
+            var fileC1 = folderC.CreatFile("1");
+
+            Assert.IsTrue(folderA.Cut(folderB1) == null);
+            Assert.IsTrue(folderA.Cut(folderB2) != null);
+
+            string fileC1_OldName = fileC1.Name; //1
+            Assert.IsTrue(folderA.Cut(fileC1) != null); //has folder 1 under foler A, file 1 cut to folder A ,should rename
+            string fileC1_NewName = fileC1.Name; //1 (1)
+            Assert.IsTrue(fileC1_NewName != fileC1_OldName);
+
         }
 
         [TestMethod]
@@ -215,32 +242,36 @@ namespace UnitTestProject
 
             var destFolder = folder1.CreateFolder(@"Dest");
             var nodeCount = VirtualStorage.Instance.Items.Count;
-            // total 6 folder created:
+            // total 7 folder created:
             // $\1
             // $\1\A1
             // $\1\A1\B2
             // $\1\A1\B2\C1
             // $\1\A1\B2\C2
             // $\1\A1\B2\C2\D1
-            Assert.IsTrue((nodeCount - nodeCountStart) == 6);
+            // $\1\Dest
+            //Assert.IsTrue((nodeCount - nodeCountStart) == 6); //Fix
+            Assert.IsTrue((nodeCount - nodeCountStart) == 7);
 
             var subFolderCopyed = destFolder.Copy(subFolder);
 
-            Assert.IsTrue(folder1.GetFolder(@"Dest\A1\B2") != null);
-            Assert.IsTrue(folder1.GetFolder(@"Dest\A1\B2\C2\D1") != null);
+            //Assert.IsTrue(folder1.GetFolder(@"Dest\A1\B2") != null); //Fix
+            Assert.IsTrue(folder1.GetFolder(@"Dest\B2") != null);
+            //Assert.IsTrue(folder1.GetFolder(@"Dest\A1\B2\C2\D1") != null); //Fix
+            Assert.IsTrue(folder1.GetFolder(@"Dest\B2\C2\D1") != null);
 
             // source kept
             Assert.IsTrue(folder1.GetFolder(@"A1\B2\C2\D1") != null);
 
 
-            // total 5 folder created:
-            // $\1\Dest\A1
+            // total 4 folder created:
             // $\1\Dest\B2
             // $\1\Dest\B2\C1
             // $\1\Dest\B2\C2
             // $\1\Dest\B2\C2\D1
             var nodeCount2 = VirtualStorage.Instance.Items.Count;
-            Assert.IsTrue((nodeCount2 - nodeCount) == 5);
+            //Assert.IsTrue((nodeCount2 - nodeCount) == 5); //Fix
+            Assert.IsTrue((nodeCount2 - nodeCount) == 4);
         }
     }
 }
